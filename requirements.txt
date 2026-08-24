@@ -2,6 +2,8 @@
 numpy>=1.20.0
 scipy>=1.7.0
 
-# Backend de aceleração em GPU (descomente conforme a versão do seu driver CUDA):
-# cupy-cuda12x>=12.0.0  # Para CUDA 12.x (Recomendado)
-# cupy-cuda11x>=11.0.0  # Para CUDA 11.x
+# Backend de aceleração GPU (Padrão para CUDA 12.x / GPUs modernas):
+cupy-cuda12x>=12.0.0
+
+# Caso utilize CUDA 11.x, utilize:
+# cupy-cuda11x>=11.0.0
