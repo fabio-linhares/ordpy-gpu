@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest>=7.0.0
+ordpy>=1.2.2
+build
+twine
