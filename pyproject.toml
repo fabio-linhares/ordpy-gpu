@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 authors = [
-    { name = "Fabio Linhares", email = "seu-email@exemplo.com" },
+    { name = "Fabio Linhares", email = "fabio.slinhares@prof.infnet.edu.br" },
     { name = "Bruno Costa Nogueira" },
     { name = "Rian Gabriel Santos Pinheiro" },
     { name = "Fabiane da Silva Queiroz" }
@@ -56,10 +56,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/seu-usuario/ordpy-gpu"
-Documentation = "https://github.com/seu-usuario/ordpy-gpu#readme"
-Repository = "https://github.com/seu-usuario/ordpy-gpu.git"
-"Bug Tracker" = "https://github.com/seu-usuario/ordpy-gpu/issues"
+Homepage = "https://github.com/fabio-linhares/ordpy-gpu"
+Documentation = "https://github.com/fabio-linhares/ordpy-gpu#readme"
+Repository = "https://github.com/fabio-linhares/ordpy-gpu.git"
+"Bug Tracker" = "https://github.com/fabio-linhares/ordpy-gpu/issues"
 
 [project.scripts]
 ordpy-gpu = "ordpy_gpu.cli:main"

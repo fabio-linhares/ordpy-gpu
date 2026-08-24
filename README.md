@@ -31,15 +31,19 @@ A biblioteca reformula o mapeamento ordinal clássico substituindo algoritmos de
 ### Instalação via pip
 
 ```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/ordpy-gpu.git
-cd ordpy-gpu
+# Instalação direta do PyPI (quando disponível)
+pip install ordpy-gpu
 
-# Instale o pacote e suas dependências CUDA
-pip install .
+# Ou instalação direta via GitHub
+pip install git+https://github.com/fabio-linhares/ordpy-gpu.git
+
+# Ou clone local para desenvolvimento
+git clone https://github.com/fabio-linhares/ordpy-gpu.git
+cd ordpy-gpu
+pip install -e .
 ```
 
-Se o CuPy ainda não estiver instalado no seu ambiente:
+Se o CuPy ainda não estiver instalado no seu ambiente CUDA:
 ```bash
 pip install cupy-cuda12x  # para CUDA 12.x
 # ou
@@ -84,6 +88,26 @@ for ch_idx, (h, c) in enumerate(zip(H_vec, C_vec)):
 
 ---
 
+## Ferramenta de Linha de Comando (CLI)
+
+O pacote inclui um utilitário de terminal integrado para auditoria, verificação e diagnóstico de hardware:
+
+```bash
+# Diagnóstico de Hardware e Ambiente CUDA
+ordpy-gpu info
+
+# Auditoria de Equivalência Numérica estrita contra ordpy CPU
+ordpy-gpu verify --size 512 --channels 13
+
+# Medição de Throughput de Pico (Bilhões de Janelas por Segundo)
+ordpy-gpu benchmark --size 800 --channels 13 --runs 20
+
+# Tutorial Interativo
+ordpy-gpu quickstart
+```
+
+---
+
 ## Benchmarks de Desempenho
 
 Resultados medidos em uma GPU **NVIDIA GeForce RTX 4070 Laptop (8 GB)** com 13 canais cromáticos ($W=2$):
@@ -99,10 +123,10 @@ Resultados medidos em uma GPU **NVIDIA GeForce RTX 4070 Laptop (8 GB)** com 13 c
 
 ---
 
-## Execução de Testes
+## Execução de Testes Automatizados
 
 ```bash
-pytest -v tests/
+python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
 ---
@@ -114,9 +138,18 @@ Se você utilizar `ordpy-gpu` em sua pesquisa, por favor cite:
 ```bibtex
 @article{ordpy_gpu_2026,
   title={GPU-Accelerated 2D Permutation Entropy and Statistical Complexity based on Lehmer Codes},
-  author={Fabio et al.},
-  journal={Qualificacao / Artigo Cientifico},
+  author={Linhares, Fabio and Nogueira, Bruno C. and Pinheiro, Rian G. S. and Queiroz, Fabiane S.},
+  journal={Submitted for publication},
   year={2026}
+}
+
+@software{ordpy_gpu_software_2026,
+  author = {Linhares, Fabio and Nogueira, Bruno C. and Pinheiro, Rian G. S. and Queiroz, Fabiane S.},
+  title = {ordpy-gpu: GPU-Accelerated 2D Permutation Entropy and Statistical Complexity in CUDA},
+  year = {2026},
+  publisher = {GitHub},
+  url = {https://github.com/fabio-linhares/ordpy-gpu},
+  version = {1.0.0}
 }
 ```
 
