@@ -1,9 +1,6 @@
+# Dependências de desenvolvimento, testes unitários, build e processamento de imagens de teste
 -r requirements.txt
-
-# Testes unitários e auditoria comparativa
 pytest>=7.0.0
-ordpy>=1.2.2
-
-# Ferramentas de build e distribuição PyPI
-build
-twine
+build>=1.0.0
+twine>=5.0.0
+pillow>=9.0.0

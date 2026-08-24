@@ -1,9 +1,5 @@
-# Dependências centrais de execução do ordpy-gpu
+# Dependências principais para execução acelerada em GPU e auditoria
 numpy>=1.20.0
 scipy>=1.7.0
-
-# Backend de aceleração GPU (Padrão para CUDA 12.x / GPUs modernas):
 cupy-cuda12x>=12.0.0
-
-# Caso utilize CUDA 11.x, utilize:
-# cupy-cuda11x>=11.0.0
+ordpy>=1.2.2

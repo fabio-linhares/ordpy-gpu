@@ -11,7 +11,11 @@ import time
 import argparse
 import numpy as np
 
-import ordpy
+try:
+    import ordpy
+except ImportError:
+    ordpy = None
+
 import ordpy_gpu
 from .core import is_cuda_available, get_device_info, complexity_entropy_batch
 
@@ -48,7 +52,7 @@ def cmd_info(args):
         return 1
         
     info = get_device_info()
-    ordpy_ver = getattr(ordpy, "__version__", "1.2.2")
+    ordpy_ver = getattr(ordpy, "__version__", "1.2.2") if ordpy is not None else "Não instalado (opcional)"
     
     print(f"  {GREEN}[✓] Dispositivo Ativo           :{RESET} {BOLD}{info.get('name')}{RESET}")
     print(f"  {GREEN}[✓] Memória Global de VRAM      :{RESET} {info.get('vram_gb', 0):.2f} GB")
@@ -67,6 +71,11 @@ def cmd_verify(args):
     
     if not is_cuda_available():
         print(f"{RED}[ERRO] GPU CUDA indisponível para verificação.{RESET}\n")
+        return 1
+        
+    if ordpy is None:
+        print(f"{RED}[ERRO] O pacote 'ordpy' (CPU) não está instalado no ambiente.{RESET}")
+        print("    Para auditar e comparar com a CPU de referência, instale: pip install ordpy\n")
         return 1
         
     res = args.size
