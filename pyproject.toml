@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ordpy-gpu"
+version = "1.0.0"
+description = "GPU-Accelerated 2D Permutation Entropy and Statistical Complexity in CUDA based on Lehmer Codes"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "Fabio Linhares", email = "seu-email@exemplo.com" },
+    { name = "Bruno Costa Nogueira" },
+    { name = "Rian Gabriel Santos Pinheiro" },
+    { name = "Fabiane da Silva Queiroz" }
+]
+keywords = [
+    "permutation-entropy",
+    "statistical-complexity",
+    "cuda",
+    "gpu",
+    "cupy",
+    "information-theory",
+    "image-processing",
+    "lehmer-codes",
+    "complexity-entropy"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Scientific/Engineering :: Physics"
+]
+dependencies = [
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+]
+
+[project.optional-dependencies]
+cuda12 = ["cupy-cuda12x>=12.0.0"]
+cuda11 = ["cupy-cuda11x>=11.0.0"]
+dev = [
+    "pytest>=7.0.0",
+    "ordpy>=1.2.2",
+    "build",
+    "twine"
+]
+
+[project.urls]
+Homepage = "https://github.com/seu-usuario/ordpy-gpu"
+Documentation = "https://github.com/seu-usuario/ordpy-gpu#readme"
+Repository = "https://github.com/seu-usuario/ordpy-gpu.git"
+"Bug Tracker" = "https://github.com/seu-usuario/ordpy-gpu/issues"
+
+[project.scripts]
+ordpy-gpu = "ordpy_gpu.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
