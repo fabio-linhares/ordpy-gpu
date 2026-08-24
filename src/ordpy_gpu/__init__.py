@@ -15,7 +15,7 @@ from .core import (
 )
 
 __version__ = "1.0.0"
-__author__ = "Fabio et al."
+__author__ = "Fabio Linhares, Bruno Costa Nogueira, Rian Gabriel Santos Pinheiro, Fabiane da Silva Queiroz"
 __all__ = [
     "complexity_entropy",
     "complexity_entropy_batch",
