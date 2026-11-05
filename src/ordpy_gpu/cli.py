@@ -90,41 +90,48 @@ def cmd_verify(args):
     t0_cpu = time.perf_counter()
     H_cpu = np.zeros(channels, dtype=np.float64)
     C_cpu = np.zeros(channels, dtype=np.float64)
+    F_cpu = np.zeros(channels, dtype=np.float64)
     for ch in range(channels):
         h, c = ordpy.complexity_entropy(test_stack[ch], dx=W, dy=W)
         H_cpu[ch] = h
         C_cpu[ch] = c
+        if hasattr(ordpy, "fisher_shannon") and W == 2:
+            _, f = ordpy.fisher_shannon(test_stack[ch], dx=W, dy=W)
+            F_cpu[ch] = f
     t_cpu = (time.perf_counter() - t0_cpu) * 1000.0
     
-    print(f"[*] Executando na GPU ({BOLD}ordpy-gpu com Códigos de Lehmer e LUT{RESET})...")
+    print(f"[*] Executando na GPU ({BOLD}ordpy-gpu com Códigos de Lehmer, LUT e Fisher{RESET})...")
     t0_gpu = time.perf_counter()
-    H_gpu, C_gpu = complexity_entropy_batch(test_stack, dx=W, dy=W)
+    H_gpu, C_gpu, F_gpu = complexity_entropy_batch(test_stack, dx=W, dy=W, return_fisher=True)
     t_gpu = (time.perf_counter() - t0_gpu) * 1000.0
     
     diff_H = np.abs(H_cpu - H_gpu)
     diff_C = np.abs(C_cpu - C_gpu)
+    diff_F = np.abs(F_cpu - F_gpu)
     max_dh = np.max(diff_H)
     max_dc = np.max(diff_C)
+    max_df = np.max(diff_F)
     speedup = t_cpu / t_gpu if t_gpu > 0 else 0
     
-    print("\n" + "=" * 95)
-    print(f"{'Canal':^8} | {'H (CPU)':^14} | {'H (GPU)':^14} | {'Δ H (Resíduo)':^15} | {'Δ C (Resíduo)':^15} | {'Status':^12}")
-    print("=" * 95)
+    print("\n" + "=" * 108)
+    print(f"{'Canal':^8} | {'H (CPU)':^12} | {'H (GPU)':^12} | {'Δ H':^13} | {'Δ C':^13} | {'Δ F (Fisher)':^15} | {'Status':^12}")
+    print("=" * 108)
     
     for ch in range(min(channels, 13)):
-        status = f"{GREEN}APROVADO{RESET}" if (diff_H[ch] <= 1e-14 and diff_C[ch] <= 1e-14) else f"{RED}REPROVADO{RESET}"
-        print(f"{ch:^8d} | {H_cpu[ch]:^14.8f} | {H_gpu[ch]:^14.8f} | {diff_H[ch]:^15.2e} | {diff_C[ch]:^15.2e} | {status:^12}")
+        status = f"{GREEN}APROVADO{RESET}" if (diff_H[ch] <= 1e-14 and diff_C[ch] <= 1e-14 and diff_F[ch] <= 1e-14) else f"{RED}REPROVADO{RESET}"
+        print(f"{ch:^8d} | {H_cpu[ch]:^12.6f} | {H_gpu[ch]:^12.6f} | {diff_H[ch]:^13.2e} | {diff_C[ch]:^13.2e} | {diff_F[ch]:^15.2e} | {status:^12}")
         
-    print("=" * 95)
+    print("=" * 108)
     print(f"\n{BOLD}RELATÓRIO DE AUDITORIA DE PRECISÃO E VELOCIDADE:{RESET}")
     print(f"  • {BOLD}Maior Resíduo Absoluto em H :{RESET} {GREEN}{max_dh:.2e}{RESET} (Limite de máquina IEEE 754 float64)")
     print(f"  • {BOLD}Maior Resíduo Absoluto em C :{RESET} {GREEN}{max_dc:.2e}{RESET} (Limite de máquina IEEE 754 float64)")
+    print(f"  • {BOLD}Maior Resíduo Absoluto em F :{RESET} {GREEN}{max_df:.2e}{RESET} (Limite de máquina IEEE 754 float64)")
     print(f"  • {BOLD}Tempo Total na CPU (ordpy)   :{RESET} {YELLOW}{t_cpu:.2f} ms{RESET} ({t_cpu/1000.0:.2f} segundos)")
     print(f"  • {BOLD}Tempo Total na GPU (ordpy-gpu):{RESET} {GREEN}{t_gpu:.3f} ms{RESET}")
     print(f"  • {BOLD}Aceleração Medida (Speedup)  :{RESET} {CYAN}{BOLD}{speedup:,.1f}x MAIS RÁPIDO!{RESET}\n")
     
-    if max_dh <= 1e-14 and max_dc <= 1e-14:
-        print(f"{GREEN}{BOLD}[✓] COMPROVAÇÃO CONCLUÍDA:{RESET} O resultado da GPU é matematicamente idêntico ao ordpy canônico, processado em velocidade sub-milissegundo.\n")
+    if max_dh <= 1e-14 and max_dc <= 1e-14 and max_df <= 1e-14:
+        print(f"{GREEN}{BOLD}[✓] COMPROVAÇÃO CONCLUÍDA:{RESET} O resultado da GPU (H, C, F) é matematicamente idêntico ao ordpy canônico, processado em velocidade sub-milissegundo.\n")
         return 0
     else:
         print(f"{RED}[✗] ALERTA: Desvio residual acima da tolerância esperada.{RESET}\n")

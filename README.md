@@ -1,4 +1,4 @@
-# ordpy-gpu: GPU-Accelerated 2D Permutation Entropy and Statistical Complexity via Lehmer-Ranked Inversion Counting
+# ordpy-gpu: GPU-Accelerated 2D Permutation Entropy, Statistical Complexity and Fisher Information via Lehmer-Ranked Inversion Counting
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -6,7 +6,7 @@
 [![Accuracy: IEEE 754](https://img.shields.io/badge/Accuracy-IEEE%20754%20(%3C10⁻¹⁵)-brightgreen.svg)](https://github.com/fabio-linhares/ordpy-gpu)
 [![Peak Throughput](https://img.shields.io/badge/Throughput-57.6%20G%20windows%2Fs-blueviolet.svg)](https://github.com/fabio-linhares/ordpy-gpu)
 
-`ordpy-gpu` é uma biblioteca de computação de alto desempenho em GPU (CUDA/C++ e Python/CuPy) para o cálculo ultrarrápido de **Entropia de Permutação Bidimensional (2D Permutation Entropy - $H$)** e **Complexidade Estatística de Rosso/Jensen–Shannon ($C$)** no Plano Complexidade–Entropia Causal (CECP).
+`ordpy-gpu` é uma biblioteca de computação de alto desempenho em GPU (CUDA/C++ e Python/CuPy) para o cálculo ultrarrápido de **Entropia de Permutação Bidimensional (2D Permutation Entropy - $H$)**, **Complexidade Estatística de Rosso/Jensen–Shannon ($C$)** e **Informação de Fisher Discreta ($F$)** nos Planos Causais Complexidade–Entropia (CECP) e Fisher–Shannon (CFSP).
 
 Projetada como um substituto transparente (*drop-in replacement*) para o pacote canônico de referência (`ordpy`), a biblioteca elimina o gargalo histórico de ordenação repetitiva (`argsort`) ao reformular o mapeamento ordinal em **Códigos de Lehmer (*argsort-free*) em base fatorádica**, combinando **Fusão de Kernels (*Single-Pass*)**, **Loteamento 3D de Canais** e **Redução Entrópica por Tabelas de Busca (LUT)** diretamente na VRAM do dispositivo.
 
@@ -165,6 +165,27 @@ H_vec, C_vec = ordpy_gpu.complexity_entropy_batch(image_stack, dx=2, dy=2)
 
 for i, (h, c) in enumerate(zip(H_vec, C_vec)):
     print(f"Canal {i:02d} -> H: {h:.6f} | C: {c:.6f}")
+```
+
+### 3. Trinca Completa com Informação de Fisher (H, C, F) e Plano Fisher–Shannon
+
+```python
+import numpy as np
+import ordpy_gpu
+
+img = np.random.randint(0, 256, size=(800, 800), dtype=np.uint8)
+
+# Trinca completa (H, C, F) em GPU via mapeamento canônico de Lehmer
+H, C, F = ordpy_gpu.complexity_entropy_fisher(img, dx=2, dy=2)
+print(f"Entropia (H)     : {H:.8f}")
+print(f"Complexidade (C) : {C:.8f}")
+print(f"Fisher (F)       : {F:.8f}")
+
+# Ou interface compatível com ordpy.fisher_shannon
+H, F = ordpy_gpu.fisher_shannon(img, dx=2, dy=2)
+
+# Lote multicanal 3D com a trinca (H, C, F)
+H_arr, C_arr, F_arr = ordpy_gpu.complexity_entropy_fisher_batch(image_stack, dx=2, dy=2)
 ```
 
 ---
