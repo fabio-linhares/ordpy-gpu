@@ -26,13 +26,12 @@ Para matrizes de alta resolução ($800\times800$ a $4096\times4096$) ou lotes m
 
 ## 🚀 Principais Características
 
-- **Desempenho e Aceleração Massiva:** Acelerações (*speedups*) entre **$521{,}6\times$ e $2.367{,}2\times$** em execuções padrão e até **$185.400\times$** no escalonamento multiescala frente à CPU.
-- **Vazão de Pico (*Peak Throughput*):** Processamento de até **$57{,}6$ bilhões de janelas deslizantes por segundo** (em matrizes $4096\times 4096$).
-- **Equivalência Numérica Estrita (IEEE 754):** Erros residuais máximos limitados a $\le 2{,}22 \times 10^{-16}$ para Entropia ($H$) e $\le 1{,}05 \times 10^{-15}$ para Complexidade ($C$).
-- **API 100% Compatível com `ordpy`:** Transição transparente sem necessidade de reescrever códigos legados.
-- **Loteamento Multicanal 3D Nativo:** Paralelização simultânea sobre pilhas de imagens e múltiplos canais cromáticos/espectrais (RGB, HSV, YCbCr, etc.) via grade tridimensional (`blockIdx.z`).
-- **Suporte Multiescala e Ordens Espaciais:** Suporte nativo completo para $W=2$ ($k=4$, 24 classes fatorádicas) e $W=3$ ($k=9$, 362.880 classes).
-- **CLI Integrada de Auditoria:** Utilitário de linha de comando (`ordpy-gpu verify`) para autodiagnóstico de hardware e validação de ponto flutuante em tempo real.
+- **Arquitetura Paralela Completa em GPU:** A biblioteca processa múltiplas camadas em paralelo (`blockIdx.z`), suporta dimensões de incorporação **quadradas e retangulares** ($D_x \times D_y$ com $2 \le D_x D_y \le 9$) e executa a redução entrópica integralmente no dispositivo por tabelas de busca (LUT), retornando ao hospedeiro apenas os valores finais de entropia e complexidade.
+- **Desempenho e Aceleração Massiva:** Em lotes multicanal, o ganho de velocidade alcançou até **cinco ordens de magnitude** ($127.389\times$ na RTX 4070 em $800\times 800$) em arquiteturas de entrada (MX150), alto desempenho (RTX 4070) e *datacenter* (NVIDIA A100-SXM4-80GB), além de **$1.510\times$ a $2.135\times$** em configurações retangulares ($D_x \neq D_y$).
+- **Eficiência de *Warps* Comprovada no Silício:** *Profiling* arquitetural via NVIDIA Nsight Compute (`ncu` 2026.4.0) na RTX 4070 comprovou **$99{,}8\%$ de *threads* ativas por *warp*** ($31{,}94/32$), redução de $22 \to 16$ registradores/*thread* e **$99{,}88\%$ de taxa de acerto em cache L2**.
+- **Vazão de Pico (*Peak Throughput*):** Processamento de até **$57{,}6$ bilhões de janelas/s** em $1024\times 1024$ (RTX 4070, $2\times 2$) e execução ponta a ponta de $4096\times 4096$ com $3\times 3$ ($362.880$ estados) em **$64{,}81\text{ ms}$** na NVIDIA A100-SXM4-80GB.
+- **Equivalência Numérica Estrita (IEEE 754):** Nos experimentos $2\times 2$, reproduziu a referência `ordpy` em CPU com desvios máximos de **$2{,}22\times 10^{-16}$** na entropia ($H$) e **$1{,}05\times 10^{-15}$** na complexidade ($C$), e $\le 1{,}15\times 10^{-14}$ em janelas retangulares ($D_x \neq D_y$).
+- **API 100% Compatível com `ordpy`:** Suporte a `dx, dy` arbitrários ($2 \le D_x D_y \le 9$), Informação de Fisher Discreta ($F$) e utilitário CLI de auditoria (`ordpy-gpu verify`).
 
 ---
 
@@ -44,16 +43,16 @@ O motor do `ordpy-gpu` fundamenta-se em quatro pilares de engenharia e combinat�
                                 ARQUITETURA DO MOTOR ORDPY-GPU
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │ GPU GLOBAL MEMORY (VRAM)                                                               │
-│  Input Matrix / 3D Tensor Stack (B, H, W) [Uint8 / Float32 / Float64]                  │
+│  Input Matrix / 3D Tensor Stack (B, Ny, Nx) [Uint8 / Float32 / Float64]                │
 └───────────────────────────────────────────┬────────────────────────────────────────────┘
                                             │ Single-Pass Read
                                             ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │ SINGLE-PASS FUSED CUDA KERNEL (1 Thread = 1 Sliding Window)                            │
-│  ├─ 1. Extração da Janela Local WxW (Sem alocação intermediária em VRAM)               │
+│  ├─ 1. Extração da Janela Local Dx x Dy (Sem alocação intermediária em VRAM)           │
 │  ├─ 2. Mapeamento Ordinal Branchless O(k²) via Códigos de Lehmer (Base Fatorádica)     │
 │  │     * Bijeção estrita e desempate estável garantidos pelo Teorema 1                 │
-│  └─ 3. Acumulação Atômica no Histograma de Padrões (Shared Memory / Global VRAM)       │
+│  └─ 3. Acumulação Atômica: Shared Memory (k=4, 96 B) ou Global Esparsa (4 < k <= 9)    │
 └───────────────────────────────────────────┬────────────────────────────────────────────┘
                                             │ Atomic Aggregation
                                             ▼
@@ -62,46 +61,90 @@ O motor do `ordpy-gpu` fundamenta-se em quatro pilares de engenharia e combinat�
 │  ├─ Shannon Permutation Entropy (H) via Fast Device Lookup Tables                      │
 │  └─ Jensen-Shannon Statistical Complexity (C) Reduction (Zero CPU Roundtrip)           │
 └───────────────────────────────────────────┬────────────────────────────────────────────┘
-                                            │ Final Scalars
+                                            │ Final Scalars (B pairs)
                                             ▼
                                   Output: (H, C) Tuple
 ```
 
 1. **Códigos de Lehmer (*Argsort-Free*):** Mapeamento bijetivo unívoco da permutação ordinal para a base fatorádica $[0, k!-1]$ mediante contagem estática de inversões à direita em $O(k^2)$ operações puramente relacionais *branchless*.
-2. **Teorema 1 (Bijeção e Desempate Estável):** Prova matemática formal que garante que a contagem de inversões estáticas com desigualdade estrita preserva exatamente a convenção de desempate estável (*stable sort*) do `argsort` clássico sob valores de pixel idênticos.
+2. **Teorema 1 (Bijeção e Desempate Estável):** Prova matemática formal que garante que a contagem de inversões estáticas com desigualdade estrita $[v_j < v_i]$ ($j > i$) corresponde ao código de Lehmer da permutação inversa $\sigma(V)^{-1}$, preservando a ordenação estável sob empates.
 3. **Fusão de Kernels (*Kernel Fusion*):** Eliminação completa da materialização de matrizes ordinais intermediárias na memória global da GPU.
-4. **Redução Direta no Device por LUT:** Redução do histograma e cálculo logarítmico realizados inteiramente na GPU utilizando tabelas pré-computadas (*Look-Up Tables*), eliminando transferências intermediárias *Device-to-Host*.
+4. **Redução Direta no Device por LUT:** Redução do histograma e cálculo logarítmico realizados inteiramente na GPU utilizando tabelas pré-computadas (*Look-Up Tables*), retornando ao hospedeiro apenas os $B$ pares finais $(H, C)$.
 
 ---
 
-## 📊 Estudo de Ablação e Benchmarks
+## 📊 Estudo de Ablação, Profiling Nsight e Benchmarks Comprobatórios
 
-### 1. Estudo de Ablação dos Mecanismos de Ganho (Imagem $800 \times 800$, 13 canais)
+Todos os dados brutos de reprodutibilidade estão disponíveis na pasta [`benchmarks/`](benchmarks/).
 
-| Nível Arquitetural | Descrição da Abordagem | Tempo Médio | Speedup vs. CPU | Ganho Incremental |
-| :--- | :--- | :---: | :---: | :---: |
-| **N1: CPU Canônica (`ordpy`)** | Sequencial `argsort` + `np.unique` | $30.410\text{ ms}$ | $1{,}0\times$ | Linha de Base |
-| **N2: GPU Convencional** | Paralelização ingênua com Sort em GPU | $1.010\text{ ms}$ | $30{,}1\times$ | $30{,}1\times$ |
-| **N3: GPU Lehmer** | Substituição por Códigos de Lehmer | $505\text{ ms}$ | $60{,}2\times$ | $\approx 2{,}0\times$ |
-| **N4: GPU Full (`ordpy-gpu`)** | Lehmer + *Kernel Fusion* + Lote 3D + LUT | $\mathbf{0{,}24\text{ ms}}$ | $\mathbf{127.389\times}$ | $\mathbf{12{,}2\times}$ |
+### 1. Estudo de Ablação em 4 Níveis (RTX 4070 Laptop, 13 canais, $2\times 2$)
+Fonte: [`benchmarks/ablation_study_results.csv`](benchmarks/ablation_study_results.csv)
 
-### 2. Escalabilidade Multiescala por Resolução (GPU NVIDIA RTX 4070 Laptop, 13 Canais, $W=2$)
+| Resolução | N1: CPU (`ordpy`) | N2: GPU-Sort | N3: GPU-Lehmer | N4: GPU-Full | Ganho Lehmer (N2→N3) | Ganho Fusão/LUT (N3→N4) | Speedup Total |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **$128\times 128$** | $0{,}5905\text{ s}$ | $0{,}361\text{ ms}$ | $0{,}360\text{ ms}$ | **$0{,}149\text{ ms}$** | $1{,}00\times$ | $2{,}41\times$ | **$3.953\times$** |
+| **$256\times 256$** | $2{,}5417\text{ s}$ | $0{,}826\text{ ms}$ | $0{,}562\text{ ms}$ | **$0{,}171\text{ ms}$** | $1{,}47\times$ | $3{,}28\times$ | **$14.842\times$** |
+| **$512\times 512$** | $11{,}5967\text{ s}$ | $3{,}185\text{ ms}$ | $1{,}445\text{ ms}$ | **$0{,}177\text{ ms}$** | $2{,}20\times$ | $8{,}18\times$ | **$65.603\times$** |
+| **$800\times 800$** | $30{,}4060\text{ s}$ | $5{,}569\text{ ms}$ | $2{,}922\text{ ms}$ | **$0{,}239\text{ ms}$** | $1{,}91\times$ | $12{,}24\times$ | **$127.389\times$** |
 
-| Resolução | Janelas ($B \times M$) | CPU (`ordpy`) | `ordpy-gpu` | Speedup Global | Vazão de Janelas |
-| :---: | :---: | :---: | :---: | :---: | :---: |
-| **$128 \times 128$** | $209.677$ | $0{,}59\text{ s}$ | $\mathbf{0{,}15\text{ ms}}$ | **$3.953\times$** | $17{,}1\text{ G janelas/s}$ |
-| **$256 \times 256$** | $845.325$ | $2{,}54\text{ s}$ | $\mathbf{0{,}17\text{ ms}}$ | **$14.842\times$** | $37{,}1\text{ G janelas/s}$ |
-| **$512 \times 512$** | $3.394.573$ | $11{,}60\text{ s}$ | $\mathbf{0{,}18\text{ ms}}$ | **$65.603\times$** | $52{,}8\text{ G janelas/s}$ |
-| **$800 \times 800$** | $8.299.213$ | $30{,}41\text{ s}$ | $\mathbf{0{,}24\text{ ms}}$ | **$127.389\times$** | **$56{,}2\text{ G janelas/s}$** |
-| **$1024 \times 1024$** | $13.604.877$ | $\approx 50\text{ s}$ | $\mathbf{0{,}24\text{ ms}}$ | **$> 200.000\times$** | **$57{,}6\text{ G janelas/s}$** |
-| **$4096 \times 4096$** | $217.997.325$ | $\approx 15\text{ min}$ | $\mathbf{5{,}19\text{ ms}}$ | --- | $42{,}0\text{ G janelas/s}$ |
+### 2. Profiling Arquitetural via NVIDIA Nsight Compute (`ncu` 2026.4.0, RTX 4070, $800\times 800$)
+Fonte: [`benchmarks/nsight_ncu_rtx4070.csv`](benchmarks/nsight_ncu_rtx4070.csv)
 
-### 3. Fidelidade Numérica estrita perante a CPU (IEEE 754)
+| Núcleo Avaliado | Reg./thread | Mem. Comp. | Threads Ativas/Warp | SM Throughput | L1 Hit Rate | L2 Hit Rate | Mem. Throughput | Achieved Occ. |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **N2: `GPU-Sort`** ($1$ canal, $2\times 2$) | $22$ | $0\text{ B}$ | $28{,}54 / 32$ ($89{,}2\%$) | $10{,}85\%$ | $89{,}25\%$ | $99{,}53\%$ | $1{,}90\text{ GB/s}$ | $91{,}25\%$ |
+| **N3: `GPU-Lehmer`** ($1$ canal, $2\times 2$) | $16$ | $0\text{ B}$ | **$31{,}94 / 32$ ($99{,}8\%$)** | $3{,}09\%$ | $37{,}63\%$ | $92{,}62\%$ | $4{,}02\text{ GB/s}$ | $78{,}94\%$ |
+| **N4: `Fused 3D`** ($13$ canais, $2\times 2$) | $16$ | $96\text{ B}$ | $31{,}76 / 32$ ($99{,}3\%$) | **$56{,}28\%$** | $0{,}03\%$ | **$99{,}88\%$** | $0{,}05\text{ GB/s}$ | $56{,}37\%$ |
+| **N4: `Fused 3D`** ($13$ canais, $3\times 3$) | $22$ | $0\text{ B}$ | **$31{,}98 / 32$ ($99{,}9\%$)** | $46{,}70\%$ | $60{,}00\%$ | $88{,}27\%$ | $0{,}13\text{ GB/s}$ | $34{,}96\%$ |
 
-| Métrica | CPU Canônica (`ordpy`) | GPU Proposta (`ordpy-gpu`) | Erro Residual Máximo | Status de Auditoria |
+### 3. Dimensões de Incorporação Retangulares ($D_x \neq D_y$, RTX 4070 vs. `ordpy` CPU, 13 canais, $800\times 800$)
+Fonte: [`benchmarks/benchmark_retangular_dx_dy.json`](benchmarks/benchmark_retangular_dx_dy.json)
+
+| $D_x \times D_y$ | $k$ | Estados ($k!$) | CPU (`ordpy`) | GPU $\pm$ IC 95% | Speedup | $\max|\Delta H|$ | $\max|\Delta C|$ |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **$1\times 4$** | $4$ | $24$ | $19{,}2147\text{ s}$ | $11{,}04 \pm 0{,}90\text{ ms}$ | **$1.740{,}1\times$** | $2{,}22\times 10^{-16}$ | $7{,}33\times 10^{-16}$ |
+| **$4\times 1$** | $4$ | $24$ | $18{,}1771\text{ s}$ | $12{,}04 \pm 0{,}98\text{ ms}$ | **$1.510{,}0\times$** | $1{,}11\times 10^{-16}$ | $1{,}47\times 10^{-15}$ |
+| **$2\times 3$** | $6$ | $720$ | $21{,}0945\text{ s}$ | $11{,}82 \pm 0{,}74\text{ ms}$ | **$1.785{,}0\times$** | $3{,}33\times 10^{-16}$ | $1{,}29\times 10^{-15}$ |
+| **$3\times 2$** | $6$ | $720$ | $21{,}4840\text{ s}$ | $11{,}71 \pm 0{,}91\text{ ms}$ | **$1.835{,}2\times$** | $3{,}33\times 10^{-16}$ | $1{,}94\times 10^{-15}$ |
+| **$2\times 4$** | $8$ | $40.320$ | $22{,}5958\text{ s}$ | $10{,}73 \pm 0{,}75\text{ ms}$ | **$2.105{,}5\times$** | $8{,}88\times 10^{-16}$ | $7{,}67\times 10^{-15}$ |
+| **$4\times 2$** | $8$ | $40.320$ | $22{,}2288\text{ s}$ | $10{,}41 \pm 0{,}75\text{ ms}$ | **$2.135{,}3\times$** | $8{,}88\times 10^{-16}$ | $1{,}15\times 10^{-14}$ |
+
+### 4. Escalonamento em Larga Escala na RTX 4070 Laptop ($13$ canais, $2\times 2$, $15$ repetições)
+Fonte: [`benchmarks/large_scale_benchmark_results.csv`](benchmarks/large_scale_benchmark_results.csv)
+
+| Resolução | Janelas ($B \cdot M$) | `ordpy-gpu` ($2\times 2$) | Vazão Efetiva ($2\times 2$) |
+| :---: | :---: | :---: | :---: |
+| **$128 \times 128$** | $209.677$ | $0{,}0122 \pm 0{,}0003\text{ ms}$ | $17{,}1\text{ G janelas/s}$ |
+| **$256 \times 256$** | $845.325$ | $0{,}0228 \pm 0{,}0006\text{ ms}$ | $37{,}1\text{ G janelas/s}$ |
+| **$512 \times 512$** | $3.394.573$ | $0{,}0643 \pm 0{,}0002\text{ ms}$ | $52{,}8\text{ G janelas/s}$ |
+| **$800 \times 800$** | $8.299.213$ | $0{,}1477 \pm 0{,}0003\text{ ms}$ | $56{,}2\text{ G janelas/s}$ |
+| **$1024 \times 1024$** | $13.604.877$ | $0{,}2361 \pm 0{,}0002\text{ ms}$ | **$57{,}6\text{ G janelas/s}$ (Pico)** |
+| **$2048 \times 2048$** | $54.472.717$ | $1{,}0221 \pm 0{,}0007\text{ ms}$ | $53{,}3\text{ G janelas/s}$ |
+| **$4096 \times 4096$** | $217.997.325$ | $5{,}1876 \pm 0{,}5736\text{ ms}$ | $42{,}0\text{ G janelas/s}$ |
+
+### 5. Portabilidade em GPU Datacenter: NVIDIA A100-SXM4-80GB (Ponta a Ponta, $13$ canais, IC 95%)
+Fonte: [`benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb`](benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb) | Paridade em $800\times 800$ ($2\times 2$): $\max|\Delta H| = 3{,}33\times 10^{-16}$, $\max|\Delta C| = 1{,}47\times 10^{-15}$.
+
+| Janela | Resolução | Janelas ($B \cdot M$) | Tempo Ponta a Ponta $\pm$ IC 95% | Vazão Ponta a Ponta |
+| :---: | :---: | :---: | :---: | :---: |
+| **$2\times 2$** | $128\times 128$ | $209.677$ | $0{,}5495 \pm 0{,}0166\text{ ms}$ | $0{,}382\text{ G janelas/s}$ |
+| **$2\times 2$** | $256\times 256$ | $845.325$ | $0{,}6272 \pm 0{,}0093\text{ ms}$ | $1{,}348\text{ G janelas/s}$ |
+| **$2\times 2$** | $512\times 512$ | $3.394.573$ | $0{,}8476 \pm 0{,}0165\text{ ms}$ | $4{,}005\text{ G janelas/s}$ |
+| **$2\times 2$** | $800\times 800$ | $8.299.213$ | $1{,}6939 \pm 0{,}0599\text{ ms}$ | **$4{,}899\text{ G janelas/s}$** |
+| **$2\times 2$** | $1024\times 1024$ | $13.604.877$ | $2{,}9463 \pm 0{,}1850\text{ ms}$ | $4{,}618\text{ G janelas/s}$ |
+| **$2\times 2$** | $2048\times 2048$ | $54.472.717$ | $15{,}5170 \pm 0{,}0229\text{ ms}$ | $3{,}511\text{ G janelas/s}$ |
+| **$2\times 2$** | $4096\times 4096$ | $217.997.325$ | $62{,}0538 \pm 0{,}1264\text{ ms}$ | $3{,}513\text{ G janelas/s}$ |
+| **$3\times 3$** | $800\times 800$ | $8.278.452$ | $2{,}2139 \pm 0{,}1401\text{ ms}$ | $3{,}739\text{ G janelas/s}$ |
+| **$3\times 3$** | $1024\times 1024$ | $13.578.292$ | $3{,}4768 \pm 0{,}1948\text{ ms}$ | $3{,}905\text{ G janelas/s}$ |
+| **$3\times 3$** | $2048\times 2048$ | $54.419.508$ | $16{,}4956 \pm 0{,}0226\text{ ms}$ | $3{,}299\text{ G janelas/s}$ |
+| **$3\times 3$** | $4096\times 4096$ | $217.890.868$ | **$64{,}8050 \pm 0{,}0661\text{ ms}$** | $3{,}362\text{ G janelas/s}$ |
+
+### 6. Fidelidade Numérica Estrita perante a CPU (IEEE 754, $800\times 800$, 13 camadas)
+
+| Métrica | CPU Canônica (`ordpy`) | GPU Proposta (`ordpy-gpu`) | Erro Residual Máximo | Status |
 | :--- | :---: | :---: | :---: | :---: |
-| **Entropia Normalizada ($H$)** | $0{,}997194605928$ | $0{,}997194605928$ | $\mathbf{2{,}22 \times 10^{-16}}$ | ✅ Exata (Zero Desvio) |
-| **Complexidade Estatística ($C$)** | $0{,}004456673551$ | $0{,}004456673551$ | $\mathbf{1{,}05 \times 10^{-15}}$ | ✅ Exata (Limite Físico) |
+| **Entropia Normalizada ($H$)** | $0{,}997194605928$ | $0{,}997194605928$ | $\mathbf{2{,}22 \times 10^{-16}}$ | ✅ Exata |
+| **Complexidade Estatística ($C$)** | $0{,}004456673551$ | $0{,}004456673551$ | $\mathbf{1{,}05 \times 10^{-15}}$ | ✅ Exata |
 
 ---
 

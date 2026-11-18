@@ -1,0 +1,85 @@
+{
+  "resolution": "800x800",
+  "channels": 13,
+  "gpu": {
+    "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "vram_gb": 7.6751708984375,
+    "sm_count": 36,
+    "compute_capability": "8.9",
+    "cupy_version": "14.1.1"
+  },
+  "results": [
+    {
+      "dx": 1,
+      "dy": 4,
+      "k": 4,
+      "n_states": 24,
+      "cpu_mean_s": 19.2147,
+      "gpu_mean_ms": 11.0422,
+      "gpu_ci95_ms": 0.8997,
+      "speedup": 1740.1,
+      "max_delta_H": 2.220446049250313e-16,
+      "max_delta_C": 7.331781666161663e-16
+    },
+    {
+      "dx": 4,
+      "dy": 1,
+      "k": 4,
+      "n_states": 24,
+      "cpu_mean_s": 18.1771,
+      "gpu_mean_ms": 12.0377,
+      "gpu_ci95_ms": 0.9834,
+      "speedup": 1510.0,
+      "max_delta_H": 1.1102230246251565e-16,
+      "max_delta_C": 1.4664037670773789e-15
+    },
+    {
+      "dx": 2,
+      "dy": 3,
+      "k": 6,
+      "n_states": 720,
+      "cpu_mean_s": 21.0945,
+      "gpu_mean_ms": 11.8179,
+      "gpu_ci95_ms": 0.7372,
+      "speedup": 1785.0,
+      "max_delta_H": 3.3306690738754696e-16,
+      "max_delta_C": 1.2910679469957387e-15
+    },
+    {
+      "dx": 3,
+      "dy": 2,
+      "k": 6,
+      "n_states": 720,
+      "cpu_mean_s": 21.484,
+      "gpu_mean_ms": 11.7067,
+      "gpu_ci95_ms": 0.9118,
+      "speedup": 1835.2,
+      "max_delta_H": 3.3306690738754696e-16,
+      "max_delta_C": 1.9364935002763595e-15
+    },
+    {
+      "dx": 2,
+      "dy": 4,
+      "k": 8,
+      "n_states": 40320,
+      "cpu_mean_s": 22.5958,
+      "gpu_mean_ms": 10.7317,
+      "gpu_ci95_ms": 0.7474,
+      "speedup": 2105.5,
+      "max_delta_H": 8.881784197001252e-16,
+      "max_delta_C": 7.674416657721395e-15
+    },
+    {
+      "dx": 4,
+      "dy": 2,
+      "k": 8,
+      "n_states": 40320,
+      "cpu_mean_s": 22.2288,
+      "gpu_mean_ms": 10.4102,
+      "gpu_ci95_ms": 0.7489,
+      "speedup": 2135.3,
+      "max_delta_H": 8.881784197001252e-16,
+      "max_delta_C": 1.1504686092678185e-14
+    }
+  ]
+}
