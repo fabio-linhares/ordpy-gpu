@@ -74,5 +74,16 @@ class TestOrdpyGPU(unittest.TestCase):
         self.assertTrue(0.0 <= c_gpu <= 1.0)
         print(f"[OK] Execução W=3 concluída: H={h_gpu:.6f}, C={c_gpu:.6f}")
 
+    def test_05_rectangular_windows(self):
+        """Testa equivalência numérica estrita para janelas retangulares Dx != Dy."""
+        np.random.seed(777)
+        img = np.random.randint(0, 256, size=(120, 160), dtype=np.uint8)
+        for dx, dy in [(2, 3), (3, 2), (1, 4), (4, 1), (2, 4), (4, 2)]:
+            h_cpu, c_cpu = ordpy.complexity_entropy(img, dx=dx, dy=dy)
+            h_gpu, c_gpu = ordpy_gpu.complexity_entropy(img, dx=dx, dy=dy)
+            np.testing.assert_allclose(h_cpu, h_gpu, atol=1e-14, rtol=1e-14)
+            np.testing.assert_allclose(c_cpu, c_gpu, atol=1e-14, rtol=1e-14)
+            print(f"[OK] Retangular ({dx}x{dy}): Delta_H={abs(h_cpu-h_gpu):.2e}, Delta_C={abs(c_cpu-c_gpu):.2e}")
+
 if __name__ == "__main__":
     unittest.main()

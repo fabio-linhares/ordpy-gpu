@@ -94,6 +94,46 @@ __global__ void kernel_lehmer_w3_fused_3d(const unsigned char* img_tensor,
     }
 }
 
+// -----------------------------------------------------------------------------------------
+// Kernel Generalizado Retangular (Dx x Dy, 2 <= k <= 9) com Loteamento 3D
+// Convencao ordpy: Dx = colunas (largura), Dy = linhas (altura), k = Dx * Dy
+// -----------------------------------------------------------------------------------------
+__global__ void kernel_lehmer_rect_fused_3d(const unsigned char* img_tensor,
+                                            unsigned int* hist_tensor,
+                                            int Nr, int Nc, int Dx, int Dy,
+                                            int k, int n_states) {
+    const int fact[9] = {1, 1, 2, 6, 24, 120, 720, 5040, 40320};
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int z = blockIdx.z;
+
+    int out_w = Nc - Dx + 1;
+    int out_h = Nr - Dy + 1;
+
+    if (x < out_w && y < out_h) {
+        size_t offset = (size_t)z * Nr * Nc;
+        unsigned char v[9];
+        int idx = 0;
+        for (int dy_i = 0; dy_i < Dy; dy_i++) {
+            for (int dx_i = 0; dx_i < Dx; dx_i++) {
+                v[idx++] = img_tensor[offset + (y + dy_i) * Nc + (x + dx_i)];
+            }
+        }
+
+        int pi = 0;
+        for (int i = 0; i < k - 1; i++) {
+            int inv = 0;
+            for (int j = i + 1; j < k; j++) {
+                if (v[j] < v[i]) inv++;
+            }
+            pi += inv * fact[k - 1 - i];
+        }
+
+        size_t hist_offset = (size_t)z * n_states + pi;
+        atomicAdd(&hist_tensor[hist_offset], 1);
+    }
+}
+
 }
 '''
 
@@ -110,4 +150,5 @@ def get_cuda_kernels():
         
     k_w2 = _COMPILED_MODULE.get_function("kernel_lehmer_w2_fused_3d")
     k_w3 = _COMPILED_MODULE.get_function("kernel_lehmer_w3_fused_3d")
-    return k_w2, k_w3
+    k_rect = _COMPILED_MODULE.get_function("kernel_lehmer_rect_fused_3d")
+    return k_w2, k_w3, k_rect
