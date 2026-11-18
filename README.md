@@ -8,7 +8,7 @@
 
 `ordpy-gpu` é uma biblioteca de computação de alto desempenho em GPU (CUDA/C++ e Python/CuPy) para o cálculo ultrarrápido de **Entropia de Permutação Bidimensional (2D Permutation Entropy - $H$)**, **Complexidade Estatística de Rosso/Jensen–Shannon ($C$)** e **Informação de Fisher Discreta ($F$)** nos Planos Causais Complexidade–Entropia (CECP) e Fisher–Shannon (CFSP).
 
-Projetada como um substituto transparente (*drop-in replacement*) para o pacote canônico de referência (`ordpy`), a biblioteca elimina o gargalo histórico de ordenação repetitiva (`argsort`) ao reformular o mapeamento ordinal em **Códigos de Lehmer (*argsort-free*) em base fatorádica**, combinando **Fusão de Kernels (*Single-Pass*)**, **Loteamento 3D de Canais** e **Redução Entrópica por Tabelas de Busca (LUT)** diretamente na VRAM do dispositivo.
+Projetada como um substituto transparente (*drop-in replacement*) para a biblioteca de referência (`ordpy`), a biblioteca elimina o gargalo histórico de ordenação repetitiva (`argsort`) ao reformular o mapeamento ordinal em **Códigos de Lehmer (*argsort-free*) em base fatorádica**, combinando **Fusão de Kernels (*Single-Pass*)**, **Loteamento 3D de Canais** e **Redução Entrópica por Tabelas de Busca (LUT)** diretamente na VRAM do dispositivo.
 
 ---
 
@@ -16,7 +16,7 @@ Projetada como um substituto transparente (*drop-in replacement*) para o pacote 
 
 A análise causal de complexidade e entropia ordinal 2D é um instrumento consagrado na análise de sistemas complexos, diagnóstico médico por imagem, sensoriamento remoto, sismologia, física de fluidos e identificação forense de imagens geradas por inteligência artificial.
 
-Entretanto, as implementações de referência da literatura (como o pacote canônico `ordpy`, publicado na revista *Chaos* em 2021) operam sequencialmente na CPU com dois limitantes estruturais identificados por *profiling*:
+Entretanto, as implementações de referência da literatura (como o pacote `ordpy`, publicado na revista *Chaos* em 2021) operam sequencialmente na CPU com dois limitantes estruturais identificados por *profiling*:
 1. **$\approx 60\%$ do tempo de execução** é consumido por rotinas repetitivas de ordenação comparativa (`argsort`) aplicadas individualmente sobre cada uma das centenas de milhares a milhões de janelas deslizantes locais.
 2. **$\approx 40\%$ do tempo de execução** é gasto na agregação, contagem de padrões e redução de histogramas (`np.unique`).
 
@@ -141,7 +141,7 @@ Fonte: [`benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb`](benchmarks/
 
 ### 6. Fidelidade Numérica Estrita perante a CPU (IEEE 754, $800\times 800$, 13 camadas)
 
-| Métrica | CPU Canônica (`ordpy`) | GPU Proposta (`ordpy-gpu`) | Erro Residual Máximo | Status |
+| Métrica | CPU de Referência (`ordpy`) | GPU Proposta (`ordpy-gpu`) | Erro Residual Máximo | Status |
 | :--- | :---: | :---: | :---: | :---: |
 | **Entropia Normalizada ($H$)** | $0{,}997194605928$ | $0{,}997194605928$ | $\mathbf{2{,}22 \times 10^{-16}}$ | ✅ Exata |
 | **Complexidade Estatística ($C$)** | $0{,}004456673551$ | $0{,}004456673551$ | $\mathbf{1{,}05 \times 10^{-15}}$ | ✅ Exata |
@@ -218,7 +218,7 @@ import ordpy_gpu
 
 img = np.random.randint(0, 256, size=(800, 800), dtype=np.uint8)
 
-# Trinca completa (H, C, F) em GPU via mapeamento canônico de Lehmer
+# Trinca completa (H, C, F) em GPU via códigos de Lehmer
 H, C, F = ordpy_gpu.complexity_entropy_fisher(img, dx=2, dy=2)
 print(f"Entropia (H)     : {H:.8f}")
 print(f"Complexidade (C) : {C:.8f}")
