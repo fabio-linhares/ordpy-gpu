@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ordpy-gpu"
-version = "1.0.0"
+version = "1.1.0"
 description = "GPU-Accelerated 2D Permutation Entropy and Statistical Complexity in CUDA based on Lehmer Codes"
 readme = "README.md"
 requires-python = ">=3.8"

@@ -82,8 +82,8 @@ Fonte: [`benchmarks/ablation_study_results.csv`](benchmarks/ablation_study_resul
 
 | Resolução | N1: CPU (`ordpy`) | N2: GPU-Sort | N3: GPU-Lehmer | N4: GPU-Full | Ganho Lehmer (N2→N3) | Ganho Fusão/LUT (N3→N4) | Speedup Total |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **$128\times 128$** | $0{,}5905\text{ s}$ | $0{,}361\text{ ms}$ | $0{,}360\text{ ms}$ | **$0{,}149\text{ ms}$** | $1{,}00\times$ | $2{,}41\times$ | **$3.953\times$** |
-| **$256\times 256$** | $2{,}5417\text{ s}$ | $0{,}826\text{ ms}$ | $0{,}562\text{ ms}$ | **$0{,}171\text{ ms}$** | $1{,}47\times$ | $3{,}28\times$ | **$14.842\times$** |
+| **$128\times 128$** | $0{,}5905\text{ s}$ | $0{,}361\text{ ms}$ | $0{,}360\text{ ms}$ | **$0{,}149\text{ ms}$** | $1{,}00\times$ | $2{,}41\times$ | **$3.954\times$** |
+| **$256\times 256$** | $2{,}5417\text{ s}$ | $0{,}826\text{ ms}$ | $0{,}562\text{ ms}$ | **$0{,}171\text{ ms}$** | $1{,}47\times$ | $3{,}28\times$ | **$14.843\times$** |
 | **$512\times 512$** | $11{,}5967\text{ s}$ | $3{,}185\text{ ms}$ | $1{,}445\text{ ms}$ | **$0{,}177\text{ ms}$** | $2{,}20\times$ | $8{,}18\times$ | **$65.603\times$** |
 | **$800\times 800$** | $30{,}4060\text{ s}$ | $5{,}569\text{ ms}$ | $2{,}922\text{ ms}$ | **$0{,}239\text{ ms}$** | $1{,}91\times$ | $12{,}24\times$ | **$127.389\times$** |
 
@@ -139,7 +139,7 @@ Fonte: [`benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb`](benchmarks/
 | **$3\times 3$** | $2048\times 2048$ | $54.419.508$ | $16{,}4956 \pm 0{,}0226\text{ ms}$ | $3{,}299\text{ G janelas/s}$ |
 | **$3\times 3$** | $4096\times 4096$ | $217.890.868$ | **$64{,}8050 \pm 0{,}0661\text{ ms}$** | $3{,}362\text{ G janelas/s}$ |
 | **$2\times 2$** | $800\times 800$ (250 imgs) | $2.074.803.200$ | **$584{,}2300 \pm 1{,}2800\text{ ms}$** | $3{,}550\text{ G janelas/s}$ |
-| **$3\times 3$** | $800\times 800$ (250 imgs) | $2.069.613.000$ | **$836{,}1200 \pm 1{,}0000\text{ ms}$** | $2{,}476\text{ G janelas/s}$ |
+| **$3\times 3$** | $800\times 800$ (250 imgs) | $2.069.613.000$ | **$836{,}1200 \pm 1{,}0000\text{ ms}$** | $2{,}475\text{ G janelas/s}$ |
 
 ### 6. Fidelidade Numérica Estrita perante a CPU (IEEE 754, $800\times 800$, 13 camadas)
 
