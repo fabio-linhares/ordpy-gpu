@@ -97,17 +97,17 @@ Fonte: [`benchmarks/nsight_ncu_rtx4070.csv`](benchmarks/nsight_ncu_rtx4070.csv)
 | **N4: `Fused 3D`** ($26$ canais, $2\times 2$) | $16$ | $96\text{ B}$ | $31{,}76 / 32$ ($99{,}3\%$) | **$56{,}69\%$** | $0{,}03\%$ | **$98{,}97\%$** | $0{,}04\text{ GB/s}$ | $57{,}38\%$ |
 | **N4: `Fused 3D`** ($26$ canais, $3\times 3$) | $22$ | $0\text{ B}$ | **$31{,}98 / 32$ ($99{,}9\%$)** | $47{,}64\%$ | $60{,}00\%$ | $86{,}87\%$ | $0{,}08\text{ GB/s}$ | $34{,}78\%$ |
 
-### 3. Dimensões de Incorporação Retangulares ($D_x \neq D_y$, RTX 4070 vs. `ordpy` CPU, 13 canais, $800\times 800$)
-Fonte: [`benchmarks/benchmark_retangular_dx_dy.json`](benchmarks/benchmark_retangular_dx_dy.json)
+### 3. Dimensões de Incorporação Retangulares ($D_x \neq D_y$, $800\times 800$: RTX 4070 $13$ch e A100 $26$ch reais+sintéticos vs. `ordpy` CPU)
+Fontes: [`benchmarks/benchmark_retangular_dx_dy.json`](benchmarks/benchmark_retangular_dx_dy.json) e [`benchmarks/colab_benchmark_datacenter_gpu_executado_v2.ipynb`](benchmarks/colab_benchmark_datacenter_gpu_executado_v2.ipynb)
 
-| $D_x \times D_y$ | $k$ | Estados ($k!$) | CPU (`ordpy`) | GPU $\pm$ IC 95% | Speedup | $\max|\Delta H|$ | $\max|\Delta C|$ |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **$1\times 4$** | $4$ | $24$ | $19{,}2147\text{ s}$ | $11{,}04 \pm 0{,}90\text{ ms}$ | **$1.740{,}1\times$** | $2{,}22\times 10^{-16}$ | $7{,}33\times 10^{-16}$ |
-| **$4\times 1$** | $4$ | $24$ | $18{,}1771\text{ s}$ | $12{,}04 \pm 0{,}98\text{ ms}$ | **$1.510{,}0\times$** | $1{,}11\times 10^{-16}$ | $1{,}47\times 10^{-15}$ |
-| **$2\times 3$** | $6$ | $720$ | $21{,}0945\text{ s}$ | $11{,}82 \pm 0{,}74\text{ ms}$ | **$1.785{,}0\times$** | $3{,}33\times 10^{-16}$ | $1{,}29\times 10^{-15}$ |
-| **$3\times 2$** | $6$ | $720$ | $21{,}4840\text{ s}$ | $11{,}71 \pm 0{,}91\text{ ms}$ | **$1.835{,}2\times$** | $3{,}33\times 10^{-16}$ | $1{,}94\times 10^{-15}$ |
-| **$2\times 4$** | $8$ | $40.320$ | $22{,}5958\text{ s}$ | $10{,}73 \pm 0{,}75\text{ ms}$ | **$2.105{,}5\times$** | $8{,}88\times 10^{-16}$ | $7{,}67\times 10^{-15}$ |
-| **$4\times 2$** | $8$ | $40.320$ | $22{,}2288\text{ s}$ | $10{,}41 \pm 0{,}75\text{ ms}$ | **$2.135{,}3\times$** | $8{,}88\times 10^{-16}$ | $1{,}15\times 10^{-14}$ |
+| $D_x \times D_y$ | $k$ | Estados ($k!$) | CPU (`ordpy`) | RTX 4070 ($13$ch) | A100 Colab ($26$ch) | Speedup (RTX) | $\max|\Delta H|$ | $\max|\Delta C|$ |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **$1\times 4$** | $4$ | $24$ | $19{,}2147\text{ s}$ | $11{,}04 \pm 0{,}90\text{ ms}$ | $13{,}35 \pm 0{,}09\text{ ms}$ | **$1.740{,}1\times$** | $2{,}22\times 10^{-16}$ | $7{,}33\times 10^{-16}$ |
+| **$4\times 1$** | $4$ | $24$ | $18{,}1771\text{ s}$ | $12{,}04 \pm 0{,}98\text{ ms}$ | $10{,}50 \pm 0{,}38\text{ ms}$ | **$1.510{,}0\times$** | $1{,}11\times 10^{-16}$ | $1{,}47\times 10^{-15}$ |
+| **$2\times 3$** | $6$ | $720$ | $21{,}0945\text{ s}$ | $11{,}82 \pm 0{,}74\text{ ms}$ | $7{,}85 \pm 0{,}08\text{ ms}$ | **$1.785{,}0\times$** | $3{,}33\times 10^{-16}$ | $1{,}29\times 10^{-15}$ |
+| **$3\times 2$** | $6$ | $720$ | $21{,}4840\text{ s}$ | $11{,}71 \pm 0{,}91\text{ ms}$ | $7{,}89 \pm 0{,}07\text{ ms}$ | **$1.835{,}2\times$** | $3{,}33\times 10^{-16}$ | $1{,}94\times 10^{-15}$ |
+| **$2\times 4$** | $8$ | $40.320$ | $22{,}5958\text{ s}$ | $10{,}73 \pm 0{,}75\text{ ms}$ | $6{,}08 \pm 0{,}13\text{ ms}$ | **$2.105{,}5\times$** | $8{,}88\times 10^{-16}$ | $7{,}67\times 10^{-15}$ |
+| **$4\times 2$** | $8$ | $40.320$ | $22{,}2288\text{ s}$ | $10{,}41 \pm 0{,}75\text{ ms}$ | $5{,}61 \pm 0{,}09\text{ ms}$ | **$2.135{,}3\times$** | $8{,}88\times 10^{-16}$ | $1{,}15\times 10^{-14}$ |
 
 ### 4. Escalonamento em Larga Escala na RTX 4070 Laptop ($13$ canais, $2\times 2$, $15$ repetições)
 Fonte: [`benchmarks/large_scale_benchmark_results.csv`](benchmarks/large_scale_benchmark_results.csv)
@@ -123,7 +123,7 @@ Fonte: [`benchmarks/large_scale_benchmark_results.csv`](benchmarks/large_scale_b
 | **$4096 \times 4096$** | $217.997.325$ | $5{,}1876 \pm 0{,}5736\text{ ms}$ | $42{,}0\text{ G janelas/s}$ |
 
 ### 5. Portabilidade em GPU Datacenter: NVIDIA A100-SXM4-80GB (Ponta a Ponta, $13$ canais, IC 95%)
-Fonte: [`benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb`](benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb) e [`benchmarks/colab_benchmark_datacenter_gpu_executado_v2.ipynb`](benchmarks/colab_benchmark_datacenter_gpu_executado_v2.ipynb) (Corpus Real RAISE + Sintético DiffusionDB, $250$ imagens / $3.250$ planos) | Paridade real+sintética ($2\times 2$): $\max|\Delta H| = 2{,}22\times 10^{-16}$, $\max|\Delta C| = 1{,}30\times 10^{-15}$.
+Fonte: [`benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb`](benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb) e [`benchmarks/colab_benchmark_datacenter_gpu_executado_v2.ipynb`](benchmarks/colab_benchmark_datacenter_gpu_executado_v2.ipynb) (Corpus Real RAISE + Sintético DiffusionDB, $250$ imagens / $3.250$ planos) | Paridade real+sintética: $\max|\Delta H| \le 2{,}22\times 10^{-16}$ ($2\times 2$, $2\times 3$) e $3{,}89\times 10^{-15}$ ($3\times 3$); $\max|\Delta C| \le 1{,}30\times 10^{-15}$ ($2\times 2$) e $1{,}49\times 10^{-13}$ ($3\times 3$). Estresse $4096\times 4096$ derivado de foto real RAISE ($13$ch): $62{,}69 \pm 0{,}07\text{ ms}$ ($2\times 2$) e $88{,}48 \pm 0{,}39\text{ ms}$ ($3\times 3$).
 
 | Janela | Resolução | Janelas ($B \cdot M$) | Tempo Ponta a Ponta $\pm$ IC 95% | Vazão Ponta a Ponta |
 | :---: | :---: | :---: | :---: | :---: |
