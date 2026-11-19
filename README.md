@@ -123,7 +123,7 @@ Fonte: [`benchmarks/large_scale_benchmark_results.csv`](benchmarks/large_scale_b
 | **$4096 \times 4096$** | $217.997.325$ | $5{,}1876 \pm 0{,}5736\text{ ms}$ | $42{,}0\text{ G janelas/s}$ |
 
 ### 5. Portabilidade em GPU Datacenter: NVIDIA A100-SXM4-80GB (Ponta a Ponta, $13$ canais, IC 95%)
-Fonte: [`benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb`](benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb) | Paridade em $800\times 800$ ($2\times 2$): $\max|\Delta H| = 3{,}33\times 10^{-16}$, $\max|\Delta C| = 1{,}47\times 10^{-15}$.
+Fonte: [`benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb`](benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb) e [`benchmarks/colab_benchmark_datacenter_gpu_executado_v2.ipynb`](benchmarks/colab_benchmark_datacenter_gpu_executado_v2.ipynb) (Corpus Real RAISE + Sintético DiffusionDB, $250$ imagens / $3.250$ planos) | Paridade real+sintética ($2\times 2$): $\max|\Delta H| = 2{,}22\times 10^{-16}$, $\max|\Delta C| = 1{,}30\times 10^{-15}$.
 
 | Janela | Resolução | Janelas ($B \cdot M$) | Tempo Ponta a Ponta $\pm$ IC 95% | Vazão Ponta a Ponta |
 | :---: | :---: | :---: | :---: | :---: |
@@ -138,6 +138,8 @@ Fonte: [`benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb`](benchmarks/
 | **$3\times 3$** | $1024\times 1024$ | $13.578.292$ | $3{,}4768 \pm 0{,}1948\text{ ms}$ | $3{,}905\text{ G janelas/s}$ |
 | **$3\times 3$** | $2048\times 2048$ | $54.419.508$ | $16{,}4956 \pm 0{,}0226\text{ ms}$ | $3{,}299\text{ G janelas/s}$ |
 | **$3\times 3$** | $4096\times 4096$ | $217.890.868$ | **$64{,}8050 \pm 0{,}0661\text{ ms}$** | $3{,}362\text{ G janelas/s}$ |
+| **$2\times 2$** | $800\times 800$ (250 imgs) | $2.074.803.200$ | **$584{,}2300 \pm 1{,}2800\text{ ms}$** | $3{,}550\text{ G janelas/s}$ |
+| **$3\times 3$** | $800\times 800$ (250 imgs) | $2.069.613.000$ | **$836{,}1200 \pm 1{,}0000\text{ ms}$** | $2{,}476\text{ G janelas/s}$ |
 
 ### 6. Fidelidade Numérica Estrita perante a CPU (IEEE 754, $800\times 800$, 13 camadas)
 
