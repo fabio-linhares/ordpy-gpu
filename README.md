@@ -28,7 +28,7 @@ Para matrizes de alta resolução ($800\times800$ a $4096\times4096$) ou lotes m
 
 - **Arquitetura Paralela Completa em GPU:** A biblioteca processa múltiplas camadas em paralelo (`blockIdx.z`), suporta dimensões de incorporação **quadradas e retangulares** ($D_x \times D_y$ com $2 \le D_x D_y \le 9$) e executa a redução entrópica integralmente no dispositivo por tabelas de busca (LUT), retornando ao hospedeiro apenas os valores finais de entropia e complexidade.
 - **Desempenho e Aceleração Massiva:** Em lotes multicanal, o ganho de velocidade alcançou até **cinco ordens de magnitude** ($127.389\times$ na RTX 4070 em $800\times 800$) em arquiteturas de entrada (MX150), alto desempenho (RTX 4070) e *datacenter* (NVIDIA A100-SXM4-80GB), além de **$1.510\times$ a $2.135\times$** em configurações retangulares ($D_x \neq D_y$).
-- **Eficiência de *Warps* Comprovada no Silício:** *Profiling* arquitetural via NVIDIA Nsight Compute (`ncu` 2026.4.0) na RTX 4070 comprovou **$99{,}8\%$ de *threads* ativas por *warp*** ($31{,}94/32$), redução de $22 \to 16$ registradores/*thread* e **$99{,}88\%$ de taxa de acerto em cache L2**.
+- **Eficiência de *Warps* Comprovada no Silício:** *Profiling* arquitetural via NVIDIA Nsight Compute (`ncu` 2026.4.0) na RTX 4070 sobre imagens real (RAISE) e sintética (Synthbuster) comprovou **$99{,}8\%$ de *threads* ativas por *warp*** ($31{,}94/32$), redução de $22 \to 16$ registradores/*thread* e **$98{,}97\%$ de taxa de acerto em cache L2**.
 - **Vazão de Pico (*Peak Throughput*):** Processamento de até **$57{,}6$ bilhões de janelas/s** em $1024\times 1024$ (RTX 4070, $2\times 2$) e execução ponta a ponta de $4096\times 4096$ com $3\times 3$ ($362.880$ estados) em **$64{,}81\text{ ms}$** na NVIDIA A100-SXM4-80GB.
 - **Equivalência Numérica Estrita (IEEE 754):** Nos experimentos $2\times 2$, reproduziu a referência `ordpy` em CPU com desvios máximos de **$2{,}22\times 10^{-16}$** na entropia ($H$) e **$1{,}05\times 10^{-15}$** na complexidade ($C$), e $\le 1{,}15\times 10^{-14}$ em janelas retangulares ($D_x \neq D_y$).
 - **API 100% Compatível com `ordpy`:** Suporte a `dx, dy` arbitrários ($2 \le D_x D_y \le 9$), Informação de Fisher Discreta ($F$) e utilitário CLI de auditoria (`ordpy-gpu verify`).
@@ -87,15 +87,15 @@ Fonte: [`benchmarks/ablation_study_results.csv`](benchmarks/ablation_study_resul
 | **$512\times 512$** | $11{,}5967\text{ s}$ | $3{,}185\text{ ms}$ | $1{,}445\text{ ms}$ | **$0{,}177\text{ ms}$** | $2{,}20\times$ | $8{,}18\times$ | **$65.603\times$** |
 | **$800\times 800$** | $30{,}4060\text{ s}$ | $5{,}569\text{ ms}$ | $2{,}922\text{ ms}$ | **$0{,}239\text{ ms}$** | $1{,}91\times$ | $12{,}24\times$ | **$127.389\times$** |
 
-### 2. Profiling Arquitetural via NVIDIA Nsight Compute (`ncu` 2026.4.0, RTX 4070, $800\times 800$)
+### 2. Profiling Arquitetural via NVIDIA Nsight Compute (`ncu` 2026.4.0, RTX 4070, $800\times 800$, Real RAISE + Sintética Synthbuster)
 Fonte: [`benchmarks/nsight_ncu_rtx4070.csv`](benchmarks/nsight_ncu_rtx4070.csv)
 
 | Núcleo Avaliado | Reg./thread | Mem. Comp. | Threads Ativas/Warp | SM Throughput | L1 Hit Rate | L2 Hit Rate | Mem. Throughput | Achieved Occ. |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **N2: `GPU-Sort`** ($1$ canal, $2\times 2$) | $22$ | $0\text{ B}$ | $28{,}54 / 32$ ($89{,}2\%$) | $10{,}85\%$ | $89{,}25\%$ | $99{,}53\%$ | $1{,}90\text{ GB/s}$ | $91{,}25\%$ |
-| **N3: `GPU-Lehmer`** ($1$ canal, $2\times 2$) | $16$ | $0\text{ B}$ | **$31{,}94 / 32$ ($99{,}8\%$)** | $3{,}09\%$ | $37{,}63\%$ | $92{,}62\%$ | $4{,}02\text{ GB/s}$ | $78{,}94\%$ |
-| **N4: `Fused 3D`** ($13$ canais, $2\times 2$) | $16$ | $96\text{ B}$ | $31{,}76 / 32$ ($99{,}3\%$) | **$56{,}28\%$** | $0{,}03\%$ | **$99{,}88\%$** | $0{,}05\text{ GB/s}$ | $56{,}37\%$ |
-| **N4: `Fused 3D`** ($13$ canais, $3\times 3$) | $22$ | $0\text{ B}$ | **$31{,}98 / 32$ ($99{,}9\%$)** | $46{,}70\%$ | $60{,}00\%$ | $88{,}27\%$ | $0{,}13\text{ GB/s}$ | $34{,}96\%$ |
+| **N2: `GPU-Sort`** ($1$ canal, $2\times 2$) | $22$ | $0\text{ B}$ | $27{,}94 / 32$ ($87{,}3\%$) | $9{,}15\%$ | $87{,}76\%$ | $99{,}41\%$ | $1{,}08\text{ GB/s}$ | $90{,}52\%$ |
+| **N3: `GPU-Lehmer`** ($1$ canal, $2\times 2$) | $16$ | $0\text{ B}$ | **$31{,}94 / 32$ ($99{,}8\%$)** | $2{,}20\%$ | $30{,}62\%$ | $93{,}55\%$ | $2{,}25\text{ GB/s}$ | $80{,}66\%$ |
+| **N4: `Fused 3D`** ($26$ canais, $2\times 2$) | $16$ | $96\text{ B}$ | $31{,}76 / 32$ ($99{,}3\%$) | **$56{,}69\%$** | $0{,}03\%$ | **$98{,}97\%$** | $0{,}04\text{ GB/s}$ | $57{,}38\%$ |
+| **N4: `Fused 3D`** ($26$ canais, $3\times 3$) | $22$ | $0\text{ B}$ | **$31{,}98 / 32$ ($99{,}9\%$)** | $47{,}64\%$ | $60{,}00\%$ | $86{,}87\%$ | $0{,}08\text{ GB/s}$ | $34{,}78\%$ |
 
 ### 3. Dimensões de Incorporação Retangulares ($D_x \neq D_y$, RTX 4070 vs. `ordpy` CPU, 13 canais, $800\times 800$)
 Fonte: [`benchmarks/benchmark_retangular_dx_dy.json`](benchmarks/benchmark_retangular_dx_dy.json)
