@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![CUDA Acceleration](https://img.shields.io/badge/CUDA-CuPy-green.svg)](https://cupy.dev/)
-[![Accuracy: IEEE 754](https://img.shields.io/badge/Accuracy-IEEE%20754%20(%3C10⁻¹⁵)-brightgreen.svg)](https://github.com/fabio-linhares/ordpy-gpu)
+[![Accuracy: IEEE 754](https://img.shields.io/badge/Accuracy-IEEE%20754%20(%E2%89%A41.49e--13)-brightgreen.svg)](https://github.com/fabio-linhares/ordpy-gpu)
 [![Peak Throughput](https://img.shields.io/badge/Throughput-57.6%20G%20windows%2Fs-blueviolet.svg)](https://github.com/fabio-linhares/ordpy-gpu)
 
 `ordpy-gpu` é uma biblioteca de computação de alto desempenho em GPU (CUDA/C++ e Python/CuPy) para o cálculo ultrarrápido de **Entropia de Permutação Bidimensional (2D Permutation Entropy - $H$)**, **Complexidade Estatística de Rosso/Jensen–Shannon ($C$)** e **Informação de Fisher Discreta ($F$)** nos Planos Causais Complexidade–Entropia (CECP) e Fisher–Shannon (CFSP).
@@ -31,7 +31,7 @@ Para matrizes de alta resolução ($800\times800$ a $4096\times4096$) ou lotes m
 - **Eficiência de *Warps* Comprovada no Silício:** *Profiling* arquitetural via NVIDIA Nsight Compute (`ncu` 2026.4.0) na RTX 4070 sobre imagens real (RAISE) e sintética (Synthbuster) comprovou **$99{,}8\%$ de *threads* ativas por *warp*** ($31{,}94/32$), redução de $22 \to 16$ registradores/*thread* e **$98{,}97\%$ de taxa de acerto em cache L2**.
 - **Vazão de Pico (*Peak Throughput*):** Processamento de até **$57{,}6$ bilhões de janelas/s** em $1024\times 1024$ (RTX 4070, $2\times 2$) e execução ponta a ponta de $4096\times 4096$ com $3\times 3$ ($362.880$ estados) em **$64{,}81\text{ ms}$** na NVIDIA A100-SXM4-80GB.
 - **Equivalência Numérica Estrita (IEEE 754):** Nos experimentos $2\times 2$, reproduziu a referência `ordpy` em CPU com desvios máximos de **$2{,}22\times 10^{-16}$** na entropia ($H$) e **$1{,}05\times 10^{-15}$** na complexidade ($C$), e $\le 1{,}15\times 10^{-14}$ em janelas retangulares ($D_x \neq D_y$).
-- **API 100% Compatível com `ordpy`:** Suporte a `dx, dy` arbitrários ($2 \le D_x D_y \le 9$), Informação de Fisher Discreta ($F$) e utilitário CLI de auditoria (`ordpy-gpu verify`).
+- **API 100% Compatível com `ordpy`:** Substituição direta para entradas 2D e lotes 3D sob atrasos unitários ($\tau_x = \tau_y = 1$), com suporte a `dx, dy` arbitrários ($2 \le D_x D_y \le 9$), Informação de Fisher Discreta ($F$) e utilitário CLI de auditoria (`ordpy-gpu verify`).
 
 ---
 
@@ -97,6 +97,8 @@ Fonte: [`benchmarks/nsight_ncu_rtx4070.csv`](benchmarks/nsight_ncu_rtx4070.csv)
 | **N4: `Fused 3D`** ($26$ canais, $2\times 2$) | $16$ | $96\text{ B}$ | $31{,}76 / 32$ ($99{,}3\%$) | **$56{,}69\%$** | $0{,}03\%$ | **$98{,}97\%$** | $0{,}04\text{ GB/s}$ | $57{,}38\%$ |
 | **N4: `Fused 3D`** ($26$ canais, $3\times 3$) | $22$ | $0\text{ B}$ | **$31{,}98 / 32$ ($99{,}9\%$)** | $47{,}64\%$ | $60{,}00\%$ | $86{,}87\%$ | $0{,}08\text{ GB/s}$ | $34{,}78\%$ |
 
+> **Nota arquitetural (`ncu`):** Em `N3`, a remoção da ordenação mantendo a escrita global do mapa intermediário torna o kernel dominado por latência de escrita (`SM Thr. = 2,20%`). Em `N4` ($2\times 2$), o `L1 Hit = 0,03%` reflete a acumulação em *shared memory* somada a rajadas `uint8` atendidas pelo L2 (`98,97%`); em $3\times 3$, a releitura espacial de $9\times$ eleva o acerto em L1TEX para `60,00%`.
+
 ### 3. Dimensões de Incorporação Retangulares ($D_x \neq D_y$, $800\times 800$: RTX 4070 $13$ch e A100 $26$ch reais+sintéticos vs. `ordpy` CPU)
 Fontes: [`benchmarks/benchmark_retangular_dx_dy.json`](benchmarks/benchmark_retangular_dx_dy.json) e [`benchmarks/colab_benchmark_datacenter_gpu_executado_v2.ipynb`](benchmarks/colab_benchmark_datacenter_gpu_executado_v2.ipynb)
 
@@ -108,6 +110,8 @@ Fontes: [`benchmarks/benchmark_retangular_dx_dy.json`](benchmarks/benchmark_reta
 | **$3\times 2$** | $6$ | $720$ | $21{,}4840\text{ s}$ | $11{,}71 \pm 0{,}91\text{ ms}$ | $7{,}89 \pm 0{,}07\text{ ms}$ | **$1.835{,}2\times$** | $3{,}33\times 10^{-16}$ | $1{,}94\times 10^{-15}$ |
 | **$2\times 4$** | $8$ | $40.320$ | $22{,}5958\text{ s}$ | $10{,}73 \pm 0{,}75\text{ ms}$ | $6{,}08 \pm 0{,}13\text{ ms}$ | **$2.105{,}5\times$** | $8{,}88\times 10^{-16}$ | $7{,}67\times 10^{-15}$ |
 | **$4\times 2$** | $8$ | $40.320$ | $22{,}2288\text{ s}$ | $10{,}41 \pm 0{,}75\text{ ms}$ | $5{,}61 \pm 0{,}09\text{ ms}$ | **$2.135{,}3\times$** | $8{,}88\times 10^{-16}$ | $1{,}15\times 10^{-14}$ |
+
+> **Nota (janelas retangulares):** Os desvios de $10^{-16}$ a $10^{-14}$ em configurações assimétricas ($1\times 4$ vs. $4\times 1$) atestam tanto a paridade numérica quanto o alinhamento exato dos eixos $(D_x, D_y)$ e leitura *row-major* frente à `ordpy`. Na A100, $4\times 2$ ($5{,}61\text{ ms}$) supera $1\times 4$ ($13{,}35\text{ ms}$) porque a esparsidade em $40.320$ estados e a leitura horizontal contígua ($D_x=4$) eliminam a contenção atômica nos $24$ estados de $k=4$.
 
 ### 4. Escalonamento em Larga Escala na RTX 4070 Laptop ($13$ canais, $2\times 2$, $15$ repetições)
 Fonte: [`benchmarks/large_scale_benchmark_results.csv`](benchmarks/large_scale_benchmark_results.csv)
@@ -121,6 +125,8 @@ Fonte: [`benchmarks/large_scale_benchmark_results.csv`](benchmarks/large_scale_b
 | **$1024 \times 1024$** | $13.604.877$ | $0{,}2361 \pm 0{,}0002\text{ ms}$ | **$57{,}6\text{ G janelas/s}$ (Pico)** |
 | **$2048 \times 2048$** | $54.472.717$ | $1{,}0221 \pm 0{,}0007\text{ ms}$ | $53{,}3\text{ G janelas/s}$ |
 | **$4096 \times 4096$** | $217.997.325$ | $5{,}1876 \pm 0{,}5736\text{ ms}$ | $42{,}0\text{ G janelas/s}$ |
+
+> Em execução ponta a ponta na RTX 4070 Laptop (`60 W` TGP, `8 GB` VRAM) para $4096\times 4096$ com $3\times 3$ ($B=13$), o motor fusionado conclui o lote em **`155,57 ms`** (pico de $\sim 1{,}16\text{ GB}$ no pool CuPy).
 
 ### 5. Portabilidade em GPU Datacenter: NVIDIA A100-SXM4-80GB (Ponta a Ponta, $13$ canais, IC 95%)
 Fonte: [`benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb`](benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb) e [`benchmarks/colab_benchmark_datacenter_gpu_executado_v2.ipynb`](benchmarks/colab_benchmark_datacenter_gpu_executado_v2.ipynb) (Corpus Real RAISE + Sintético DiffusionDB, $250$ imagens / $3.250$ planos) | Paridade real+sintética: $\max|\Delta H| \le 2{,}22\times 10^{-16}$ ($2\times 2$, $2\times 3$) e $3{,}89\times 10^{-15}$ ($3\times 3$); $\max|\Delta C| \le 1{,}30\times 10^{-15}$ ($2\times 2$) e $1{,}49\times 10^{-13}$ ($3\times 3$). Estresse $4096\times 4096$ derivado de foto real RAISE ($13$ch): $62{,}69 \pm 0{,}07\text{ ms}$ ($2\times 2$) e $88{,}48 \pm 0{,}39\text{ ms}$ ($3\times 3$).
@@ -138,7 +144,7 @@ Fonte: [`benchmarks/colab_benchmark_datacenter_gpu_executado.ipynb`](benchmarks/
 | **$3\times 3$** | $1024\times 1024$ | $13.578.292$ | $3{,}4768 \pm 0{,}1948\text{ ms}$ | $3{,}905\text{ G janelas/s}$ |
 | **$3\times 3$** | $2048\times 2048$ | $54.419.508$ | $16{,}4956 \pm 0{,}0226\text{ ms}$ | $3{,}299\text{ G janelas/s}$ |
 | **$3\times 3$** | $4096\times 4096$ | $217.890.868$ | **$64{,}8050 \pm 0{,}0661\text{ ms}$** | $3{,}362\text{ G janelas/s}$ |
-| **$2\times 2$** | $800\times 800$ (250 imgs) | $2.074.803.200$ | **$584{,}2300 \pm 1{,}2800\text{ ms}$** | $3{,}550\text{ G janelas/s}$ |
+| **$2\times 2$** | $800\times 800$ (250 imgs) | $2.074.803.250$ | **$584{,}2300 \pm 1{,}2800\text{ ms}$** | $3{,}551\text{ G janelas/s}$ |
 | **$3\times 3$** | $800\times 800$ (250 imgs) | $2.069.613.000$ | **$836{,}1200 \pm 1{,}0000\text{ ms}$** | $2{,}475\text{ G janelas/s}$ |
 
 ### 6. Fidelidade Numérica Estrita perante a CPU (IEEE 754, $800\times 800$, 13 camadas)
@@ -284,7 +290,7 @@ Se você utilizar a biblioteca `ordpy-gpu` ou seus conceitos algorítmicos em se
   year={2026},
   publisher={GitHub},
   url={https://github.com/fabio-linhares/ordpy-gpu},
-  version={1.0.0}
+  version={1.1.0}
 }
 ```
 
